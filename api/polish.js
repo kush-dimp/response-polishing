@@ -11,31 +11,15 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields: model, messages' });
     }
 
-    const isOpenAI = model.startsWith('gpt-') || model.startsWith('o1');
-
     try {
-        let apiResponse;
-
-        if (isOpenAI) {
-            apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-                },
-                body: JSON.stringify({ model, messages, max_tokens })
-            });
-        } else {
-            apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': process.env.ANTHROPIC_API_KEY,
-                    'anthropic-version': '2023-06-01'
-                },
-                body: JSON.stringify({ model, messages, max_tokens })
-            });
-        }
+        const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({ model, messages, max_tokens })
+        });
 
         const data = await apiResponse.json();
         return res.status(apiResponse.status).json(data);
