@@ -332,18 +332,6 @@
             z-index: 9999;
             box-shadow: var(--shadow-lg), var(--glow);
             display: none;
-            animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .custom-select-dropdown.open {
@@ -1221,41 +1209,45 @@ Do not include any other text, preambles, explanations, or comments about the or
         // Custom Dropdown Implementation
         function initCustomSelects() {
             const selects = document.querySelectorAll('select');
-            
+
             selects.forEach(select => {
                 // Create wrapper
                 const wrapper = document.createElement('div');
                 wrapper.className = 'custom-select-wrapper';
                 select.parentNode.insertBefore(wrapper, select);
                 wrapper.appendChild(select);
-                
+
                 // Create trigger
                 const trigger = document.createElement('div');
                 trigger.className = 'custom-select-trigger';
-                
+
                 const triggerText = document.createElement('span');
                 const selectedOption = select.options[select.selectedIndex];
                 triggerText.textContent = selectedOption.text;
-                
+
                 const arrow = document.createElement('svg');
                 arrow.className = 'custom-select-arrow';
                 arrow.innerHTML = '<path d="M1 1L6 6L11 1" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
                 arrow.setAttribute('width', '12');
                 arrow.setAttribute('height', '8');
                 arrow.setAttribute('viewBox', '0 0 12 8');
-                
+
                 trigger.appendChild(triggerText);
                 trigger.appendChild(arrow);
                 wrapper.appendChild(trigger);
-                
-                // Create dropdown
+
+                // Create dropdown — appended to body to escape all parent overflow clipping
                 const dropdown = document.createElement('div');
                 dropdown.className = 'custom-select-dropdown';
-                
+                document.body.appendChild(dropdown);
+
+                // Cross-references so close-all logic doesn't rely on DOM siblings
+                trigger._dropdown = dropdown;
+                dropdown._trigger = trigger;
+
                 // Build options
                 Array.from(select.options).forEach(option => {
                     if (option.parentElement.tagName === 'OPTGROUP') {
-                        // Check if we need to add optgroup label
                         const optgroup = option.parentElement;
                         if (!dropdown.querySelector(`[data-optgroup="${optgroup.label}"]`)) {
                             const optgroupDiv = document.createElement('div');
@@ -1265,70 +1257,77 @@ Do not include any other text, preambles, explanations, or comments about the or
                             dropdown.appendChild(optgroupDiv);
                         }
                     }
-                    
+
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'custom-select-option';
                     optionDiv.textContent = option.text;
                     optionDiv.setAttribute('data-value', option.value);
-                    
-                    if (option.selected) {
-                        optionDiv.classList.add('selected');
-                    }
-                    
+
+                    if (option.selected) optionDiv.classList.add('selected');
+
                     optionDiv.addEventListener('click', () => {
-                        // Update native select
                         select.value = option.value;
                         select.dispatchEvent(new Event('change'));
-                        
-                        // Update trigger text
                         triggerText.textContent = option.text;
-                        
-                        // Update selected class
-                        dropdown.querySelectorAll('.custom-select-option').forEach(opt => {
-                            opt.classList.remove('selected');
-                        });
+                        dropdown.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
                         optionDiv.classList.add('selected');
-                        
-                        // Close dropdown
                         dropdown.classList.remove('open');
                         trigger.classList.remove('open');
                     });
-                    
+
                     dropdown.appendChild(optionDiv);
                 });
-                
-                wrapper.appendChild(dropdown);
-                
-                // Toggle dropdown
+
+                function positionDropdown() {
+                    const rect = trigger.getBoundingClientRect();
+                    dropdown.style.top  = (rect.bottom + 8) + 'px';
+                    dropdown.style.left = rect.left + 'px';
+                    dropdown.style.width = rect.width + 'px';
+                }
+
                 trigger.addEventListener('click', (e) => {
                     e.stopPropagation();
 
-                    // Close all other dropdowns
+                    const isOpening = !dropdown.classList.contains('open');
+
+                    // Close every other open dropdown
                     document.querySelectorAll('.custom-select-dropdown.open').forEach(dd => {
                         if (dd !== dropdown) {
                             dd.classList.remove('open');
-                            dd.previousElementSibling.classList.remove('open');
+                            if (dd._trigger) dd._trigger.classList.remove('open');
                         }
                     });
 
-                    const isOpening = !dropdown.classList.contains('open');
-                    dropdown.classList.toggle('open');
-                    trigger.classList.toggle('open');
-
                     if (isOpening) {
-                        const rect = trigger.getBoundingClientRect();
-                        dropdown.style.top = (rect.bottom + 8) + 'px';
-                        dropdown.style.left = rect.left + 'px';
-                        dropdown.style.width = rect.width + 'px';
+                        positionDropdown();
+                        dropdown.classList.add('open');
+                        trigger.classList.add('open');
+                    } else {
+                        dropdown.classList.remove('open');
+                        trigger.classList.remove('open');
                     }
                 });
             });
-            
-            // Close dropdown when clicking outside
+
+            // Keep open dropdowns aligned when page scrolls or resizes
+            function repositionOpenDropdowns() {
+                document.querySelectorAll('.custom-select-dropdown.open').forEach(dd => {
+                    if (dd._trigger) {
+                        const rect = dd._trigger.getBoundingClientRect();
+                        dd.style.top  = (rect.bottom + 8) + 'px';
+                        dd.style.left = rect.left + 'px';
+                        dd.style.width = rect.width + 'px';
+                    }
+                });
+            }
+            window.addEventListener('scroll', repositionOpenDropdowns, true);
+            window.addEventListener('resize', repositionOpenDropdowns);
+
+            // Close all when clicking outside
             document.addEventListener('click', () => {
-                document.querySelectorAll('.custom-select-dropdown.open').forEach(dropdown => {
-                    dropdown.classList.remove('open');
-                    dropdown.previousElementSibling.classList.remove('open');
+                document.querySelectorAll('.custom-select-dropdown.open').forEach(dd => {
+                    dd.classList.remove('open');
+                    if (dd._trigger) dd._trigger.classList.remove('open');
                 });
             });
         }
