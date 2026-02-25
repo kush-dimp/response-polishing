@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Response Polishing Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d29;
+            --bg-tertiary: #252837;
+            --bg-card: linear-gradient(135deg, #1a1d29 0%, #14161f 100%);
+            --accent-primary: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-secondary: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border-color: #2d3142;
+            --border-hover: #3f4556;
+            --shadow-sm: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 8px 16px -2px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 16px 32px -4px rgba(0, 0, 0, 0.6);
+            --glow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0c10 0%, #14161f 50%, #1a1d29 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 48px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            margin-bottom: 48px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: var(--shadow-md), var(--glow);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .panel:hover::before {
+            opacity: 1;
+        }
+
+        .panel-header {
+            margin-bottom: 24px;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .panel-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-of-type {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #0f1117 !important;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: #f1f5f9 !important;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9375rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color-scheme: dark;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        /* Force dark background on dropdown options - multiple approaches for browser compatibility */
+        select option {
+            background-color: #0f1117 !important;
+            background: #0f1117 !important;
+            color: #f1f5f9 !important;
+            padding: 10px;
+        }
+
+        select optgroup {
+            background-color: #1a1d29 !important;
+            background: #1a1d29 !important;
+            color: #cbd5e1 !important;
+            font-weight: 600;
+        }
+
+        /* Additional specificity for dropdown menu when opened */
+        select:active,
+        select:focus,
+        select:active option,
+        select:focus option {
+            background-color: #0f1117 !important;
+            background: #0f1117 !important;
+            color: #f1f5f9 !important;
+        }
+
+        select option:hover {
+            background-color: #1a1d29 !important;
+            background: #1a1d29 !important;
+        }
+
+        select option:checked {
+            background-color: #6366f1 !important;
+            background: #6366f1 !important;
+            color: white !important;
+        }
+
+        /* Remove transitions that might cause flash */
+        select * {
+            transition: none !important;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), var(--glow);
+            background-color: #0f1117 !important;
+        }
+
+        select:hover, textarea:hover {
+            border-color: var(--accent-primary);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #1a1d29 !important;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+            transition: none !important;
+        }
+
+        /* Prevent white flash on click/focus */
+        select:active,
+        select:focus,
+        select:hover {
+            background-color: #1a1d29 !important;
+            background: #1a1d29 !important;
+        }
+
+        /* For WebKit browsers - force system to use dark theme */
+        select::-webkit-scrollbar {
+            background-color: #1a1d29;
+        }
+
+        select::-webkit-scrollbar-thumb {
+            background-color: #3f4556;
+        }
+
+        /* Firefox specific */
+        @-moz-document url-prefix() {
+            select {
+                scrollbar-color: #3f4556 #1a1d29;
+            }
+        }
+
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Custom Dropdown Styles - Full control, no native rendering */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-wrapper select {
+            display: none; /* Hide native select */
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #0f1117 !important;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: #f1f5f9 !important;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-select-trigger:hover {
+            border-color: var(--border-hover);
+        }
+
+        .custom-select-trigger.open {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), var(--glow);
+        }
+
+        .custom-select-arrow {
+            width: 12px;
+            height: 8px;
+            margin-left: 10px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-select-trigger.open .custom-select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-select-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #0f1117 0%, #14161f 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            max-height: 320px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg), var(--glow);
+            display: none;
+            animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-select-dropdown.open {
+            display: block;
+        }
+
+        .custom-select-dropdown::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-select-dropdown::-webkit-scrollbar-track {
+            background: #0f1117;
+        }
+
+        .custom-select-dropdown::-webkit-scrollbar-thumb {
+            background: #2d3142;
+            border-radius: 4px;
+        }
+
+        .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #3f4556;
+        }
+
+        .custom-select-optgroup {
+            padding: 10px 16px 6px 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: linear-gradient(135deg, #1a1d29 0%, #14161f 100%);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .custom-select-optgroup:first-child {
+            border-top: none;
+        }
+
+        .custom-select-option {
+            padding: 12px 16px;
+            color: #f1f5f9;
+            cursor: pointer;
+            font-size: 0.9375rem;
+            background-color: transparent;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-select-option:hover {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+            padding-left: 20px;
+        }
+
+        .custom-select-option.selected {
+            background: var(--accent-gradient);
+            color: white;
+            font-weight: 500;
+        }
+
+        .custom-select-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .output-section {
+            display: grid;
+            gap: 20px;
+        }
+
+        .response-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .response-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .response-card:hover {
+            box-shadow: var(--shadow-md), var(--glow);
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+        }
+
+        .response-card:hover::before {
+            opacity: 1;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .response-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .response-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #a5b4fc;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .response-tag:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25));
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .response-content {
+            line-height: 1.7;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+            min-height: 100px;
+        }
+
+        .response-content.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.875rem;
+        }
+
+        .response-content.visible {
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button {
+            width: 100%;
+            padding: 14px 24px;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md), 0 0 30px rgba(99, 102, 241, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button:disabled:hover::before {
+            left: -100%;
+        }
+
+        .copy-button {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 0.8125rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        .copy-button:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.15));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #c4b5fd;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .info-tag:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(168, 85, 247, 0.25));
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        .icon {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+
+        .input-panel {
+            grid-column: span 3;
+        }
+
+        .thread-panel {
+            grid-column: span 3;
+        }
+
+        .thread-textarea {
+            min-height: 180px;
+            background: var(--bg-tertiary);
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .input-panel, .thread-panel {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-panel, .thread-panel {
+                grid-column: span 1;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .container {
+                padding: 32px 16px;
+            }
+        }
+    
+        .error-banner {
+            display: none;
+            background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(185,28,28,0.1));
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: #fca5a5;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .error-banner.visible { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Response Polishing Dashboard</h1>
+            <p class="subtitle">Transform poorly written, rude, or unprofessional responses into polished, professional communication</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Recipient Relationship</h2>
+                    <p class="panel-subtitle">Who are you responding to?</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="relationship">Relationship Type</label>
+                    <select id="relationship">
+                        <option value="">-- Select Relationship --</option>
+                        <option value="client">Client / Customer</option>
+                        <option value="colleague">Colleague / Peer</option>
+                        <option value="manager">Manager / Superior</option>
+                        <option value="team_member">Team Member / Subordinate</option>
+                        <option value="vendor">Vendor / Partner</option>
+                        <option value="stakeholder">Stakeholder / Executive</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="medium">Communication Medium</label>
+                    <select id="medium">
+                        <option value="">-- Select Medium --</option>
+                        <option value="email">Email</option>
+                        <option value="chat">Chat / Instant Message</option>
+                        <option value="slack">Slack</option>
+                        <option value="teams">Microsoft Teams</option>
+                        <option value="whatsapp">WhatsApp / SMS</option>
+                        <option value="ticket">Support Ticket</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">AI Model</label>
+                    <select id="model">
+                        <optgroup label="💰 Budget Options (Recommended)">
+                            <option value="gpt-4o-mini" selected>GPT-4o Mini - $0.15/$0.60 per 1M tokens 💨 Cheapest</option>
+                            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 - $0.40/$2.00 per 1M tokens ⚡ Fast & Budget</option>
+                        </optgroup>
+                        <optgroup label="⚖️ Balanced Options">
+                            <option value="gpt-4o">GPT-4o - $2.50/$10 per 1M tokens 🎯 Good Value</option>
+                            <option value="claude-sonnet-4-20250514">Claude Sonnet 4 - $3/$15 per 1M tokens 📊 Balanced</option>
+                            <option value="o1-mini">o1-mini - $3/$12 per 1M tokens 🧮 Reasoning</option>
+                        </optgroup>
+                        <optgroup label="🎓 Premium Options">
+                            <option value="o1">o1 - $15/$60 per 1M tokens 🧠 Advanced Reasoning</option>
+                            <option value="claude-opus-4-5-20251101">Claude Opus 4.5 - $15/$75 per 1M tokens 💎 Most Capable</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="formality">Formality Level</label>
+                    <select id="formality">
+                        <option value="">-- Select Formality --</option>
+                        <option value="casual">Casual</option>
+                        <option value="professional">Professional</option>
+                        <option value="formal">Formal</option>
+                        <option value="very_formal">Very Formal</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Desired Outcome</h2>
+                    <p class="panel-subtitle">What do you want to achieve?</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="outcome">Response Type</label>
+                    <select id="outcome">
+                        <option value="">-- Select Type --</option>
+                        <option value="reject">Reject / Decline</option>
+                        <option value="approve">Approve / Accept</option>
+                        <option value="request_info">Request Information</option>
+                        <option value="provide_info">Provide Information</option>
+                        <option value="apologize">Apologize</option>
+                        <option value="explain">Explain / Clarify</option>
+                        <option value="follow_up">Follow Up</option>
+                        <option value="escalate">Escalate Issue</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="urgency">Urgency Level</label>
+                    <select id="urgency">
+                        <option value="">-- Select Urgency --</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Tone Settings</h2>
+                    <p class="panel-subtitle">Fine-tune the message tone</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="sentiment">Your Current Tone</label>
+                    <select id="sentiment">
+                        <option value="">-- Select Tone --</option>
+                        <option value="neutral">Neutral</option>
+                        <option value="frustrated">Frustrated</option>
+                        <option value="angry">Angry / Upset</option>
+                        <option value="blunt">Too Blunt / Direct</option>
+                        <option value="apologetic">Overly Apologetic</option>
+                        <option value="passive_aggressive">Passive Aggressive</option>
+                        <option value="unprofessional">Unprofessional</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="preserve_intent">Preserve Original Intent</label>
+                    <select id="preserve_intent">
+                        <option value="">-- Select Intent --</option>
+                        <option value="yes">Yes - Keep my message strong</option>
+                        <option value="soften">Soften it a bit</option>
+                        <option value="diplomatic">Make it very diplomatic</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="panel thread-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Previous Conversation Thread (Optional)</h2>
+                    <span class="info-tag">
+                        <span class="icon"></span>
+                        Auto-detects client sentiment
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="threadHistory">Paste previous messages to help analyze context</label>
+                    <textarea 
+                        id="threadHistory" 
+                        class="thread-textarea"
+                        placeholder="Paste the entire conversation thread here (optional). This helps the AI understand:
+• Client's emotional state and history
+• Previous promises or commitments
+• Recurring issues or patterns
+• Relationship dynamics
+
+Format example:
+Client: I've been waiting 3 days for a response...
+You: Sorry for delay, we're working on it
+Client: This is unacceptable, I need this NOW!
+
+Leave blank if this is the first interaction or if you don't need context analysis."
+                    ></textarea>
+                </div>
+            </div>
+
+            <div class="panel input-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Your Unpolished Response</h2>
+                    <span class="info-tag">
+                        <span class="icon"></span>
+                        Accepts any language, grammar errors, typos, or unprofessional tone
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="rawMessage">Paste your draft response here</label>
+                    <textarea 
+                        id="rawMessage" 
+                        placeholder="Enter your poorly written, rude, or unprofessional response in any language. The system will polish it into professional English.
+
+Examples:
+• 'ur request is rejected because you dont have proper documents why you not submit it before???'
+• 'I already told you this 3 times stop asking me again'
+• 'This is not possible we cant do this thing you are asking'
+• 'No tengo tiempo para esto, ya te lo expliqué' (Spanish)
+
+The dashboard will transform it into professional, grammatically correct, well-structured responses."
+                    ></textarea>
+                </div>
+
+                <button id="polishBtn">
+                    <span id="btnText">Polish My Response</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="errorBanner" class="error-banner"></div>
+
+        <div class="output-section" id="outputSection" style="display: none;">
+            <div class="response-card">
+                <div class="response-header">
+                    <span class="response-label">Option 1: Professional & Clear</span>
+                    <span class="response-tag">Balanced</span>
+                </div>
+                <div id="output1" class="response-content empty">
+                    Response will appear here...
+                </div>
+                <button class="copy-button" onclick="copyToClipboard('output1', this)">Copy Response</button>
+            </div>
+
+            <div class="response-card">
+                <div class="response-header">
+                    <span class="response-label">Option 2: Warm & Diplomatic</span>
+                    <span class="response-tag">Empathetic</span>
+                </div>
+                <div id="output2" class="response-content empty">
+                    Response will appear here...
+                </div>
+                <button class="copy-button" onclick="copyToClipboard('output2', this)">Copy Response</button>
+            </div>
+
+            <div class="response-card">
+                <div class="response-header">
+                    <span class="response-label">Option 3: Concise & Direct</span>
+                    <span class="response-tag">Efficient</span>
+                </div>
+                <div id="output3" class="response-content empty">
+                    Response will appear here...
+                </div>
+                <button class="copy-button" onclick="copyToClipboard('output3', this)">Copy Response</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function polishResponse() {
+            document.getElementById('errorBanner').classList.remove('visible');
+            const relationship = document.getElementById('relationship').value;
+            const medium = document.getElementById('medium').value;
+            const model = document.getElementById('model').value;
+            const formality = document.getElementById('formality').value;
+            const outcome = document.getElementById('outcome').value;
+            const urgency = document.getElementById('urgency').value;
+            const sentiment = document.getElementById('sentiment').value;
+            const preserve_intent = document.getElementById('preserve_intent').value;
+            const rawMessage = document.getElementById('rawMessage').value.trim();
+            const threadHistory = document.getElementById('threadHistory').value.trim();
+            const output1 = document.getElementById('output1');
+            const output2 = document.getElementById('output2');
+            const output3 = document.getElementById('output3');
+            const btn = document.getElementById('polishBtn');
+            const btnText = document.getElementById('btnText');
+            const outputSection = document.getElementById('outputSection');
+
+            if (!rawMessage) {
+                alert('Please enter a response to polish.');
+                return;
+            }
+
+            // Show loading state
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span>';
+            outputSection.style.display = 'grid';
+            
+            // Clear previous outputs
+            output1.textContent = 'Polishing your response...';
+            output2.textContent = 'Polishing your response...';
+            output3.textContent = 'Polishing your response...';
+            output1.classList.add('empty');
+            output2.classList.add('empty');
+            output3.classList.add('empty');
+            output1.classList.remove('visible');
+            output2.classList.remove('visible');
+            output3.classList.remove('visible');
+
+            try {
+                let contextInfo = '';
+                let mediumGuidance = '';
+                
+                // Build medium-specific guidance
+                if (medium) {
+                    switch(medium) {
+                        case 'email':
+                            mediumGuidance = `\nMEDIUM: Email
+- Include appropriate subject line suggestions in brackets at the start if relevant
+- Use formal structure: greeting, body paragraphs, closing signature
+- Can be longer and more detailed
+- Use proper email etiquette and formatting
+- Include salutations like "Dear [Name]" or "Hi [Name]"
+- End with "Best regards," "Sincerely," etc.`;
+                            break;
+                        case 'chat':
+                            mediumGuidance = `\nMEDIUM: Chat / Instant Message
+- Keep it concise and conversational
+- Use shorter sentences and paragraphs
+- Can use casual punctuation (but stay professional)
+- No need for formal greetings/closings
+- Get to the point quickly
+- Can use line breaks for readability`;
+                            break;
+                        case 'slack':
+                            mediumGuidance = `\nMEDIUM: Slack
+- Casual but professional tone
+- Use short, scannable messages
+- Can use emojis sparingly if appropriate for company culture
+- Bullet points work well
+- No formal salutations needed
+- Quick and direct communication style`;
+                            break;
+                        case 'teams':
+                            mediumGuidance = `\nMEDIUM: Microsoft Teams
+- Professional but conversational
+- Moderate length - not too long
+- Can use formatting like bold or bullet points
+- Slightly more formal than Slack but less than email
+- Clear and direct`;
+                            break;
+                        case 'whatsapp':
+                            mediumGuidance = `\nMEDIUM: WhatsApp / SMS
+- Very brief and concise
+- Casual and friendly tone
+- Short sentences
+- No formal structure needed
+- Get to the point immediately
+- Mobile-friendly format`;
+                            break;
+                        case 'ticket':
+                            mediumGuidance = `\nMEDIUM: Support Ticket
+- Professional and structured
+- Include ticket reference if relevant
+- Clear problem statement and solution
+- Can be detailed with steps
+- Professional but helpful tone
+- Use formatting for clarity`;
+                            break;
+                    }
+                }
+                
+                // Build context dynamically based on what user provided
+                if (threadHistory) {
+                    contextInfo += `\nPREVIOUS CONVERSATION THREAD:\n${threadHistory}\n\nIMPORTANT: Analyze the conversation thread to:
+- Automatically detect the client's true emotional state and sentiment
+- Understand relationship dynamics and history
+- Identify any previous commitments or promises
+- Note recurring issues or escalation patterns
+- Adjust your response accordingly even if other fields are blank\n`;
+                }
+                
+                if (relationship) contextInfo += `\nRecipient: ${relationship}`;
+                if (formality) contextInfo += `\nFormality level: ${formality}`;
+                if (outcome) contextInfo += `\nDesired outcome: ${outcome}`;
+                if (urgency) contextInfo += `\nUrgency: ${urgency}`;
+                if (sentiment) contextInfo += `\nOriginal tone problem: ${sentiment}`;
+                if (preserve_intent) contextInfo += `\nIntent preservation: ${preserve_intent}`;
+                
+                // If NO context provided at all, use intelligent defaults
+                const hasContext = relationship || medium || formality || outcome || urgency || sentiment || preserve_intent || threadHistory;
+                if (!hasContext) {
+                    contextInfo = `\nNo specific context provided. Use your best judgment to:
+- Analyze the message and infer the most appropriate tone
+- Detect any emotional undertones or sentiment
+- Create professional, polished versions suitable for business communication`;
+                }
+
+                const prompt = `You are a professional communication expert specializing in polishing poorly written, rude, or unprofessional responses. The input message may be in ANY language and may contain:
+- Grammar mistakes
+- Typos and spelling errors
+- Rude or aggressive tone
+- Blunt or insensitive language
+- Unprofessional phrasing
+- Passive-aggressive undertones
+- Poor structure
+
+Your task:
+1. Understand the message (regardless of its language)
+2. ${threadHistory ? 'Carefully analyze the conversation thread to understand the full context, client sentiment, and relationship dynamics' : 'Analyze the message context'}
+3. Create THREE polished versions in ENGLISH ONLY
+4. Fix all grammar, spelling, and structural issues
+5. Transform the tone to be professional while maintaining the core message
+6. ${medium ? `CRITICAL: Format responses appropriately for ${medium} - adjust length, structure, and style accordingly` : 'Use appropriate business communication format'}
+${threadHistory ? '7. Let the conversation history inform your tone and approach - if the client is escalated, acknowledge it; if they\'re patient, maintain that warmth' : ''}
+
+Context:${contextInfo}
+${mediumGuidance}
+
+Original unpolished message:
+${rawMessage}
+
+Rules for all responses:
+* ALWAYS respond in English, regardless of input language
+* Fix ALL grammar, spelling, and punctuation errors
+* Make the message professional and well-structured
+${medium ? `* CRITICAL: Tailor the response format, length, and style for ${medium}` : '* Use professional business format'}
+${medium === 'email' ? '* Include [Subject: ...] at the start if a subject line would be helpful' : ''}
+${medium === 'chat' || medium === 'slack' || medium === 'whatsapp' ? '* Keep it concise - these are quick messaging platforms' : ''}
+${medium === 'email' || medium === 'ticket' ? '* Can be more detailed and structured' : ''}
+${relationship ? `* Adjust tone for ${relationship} relationship` : '* Use professional business tone'}
+${formality ? `* Match ${formality} formality level` : '* Use professional formality'}
+${threadHistory ? '* CRITICAL: Use the conversation history to inform your response - acknowledge past interactions, address concerns raised, and adjust tone based on the client\'s emotional trajectory' : ''}
+${preserve_intent ? `* ${preserve_intent === 'yes' ? 'Keep the original intent and firmness' : preserve_intent === 'soften' ? 'Soften the message slightly while keeping the main point' : 'Make the message very diplomatic and gentle'}` : '* Balance firmness with professionalism'}
+${urgency ? `* Match the ${urgency} urgency level in your tone` : ''}
+* Remove any rudeness, aggression, or unprofessional language
+* If it's a rejection/decline, make it constructive
+* If it's an approval, make it encouraging
+* Use appropriate greetings/closings based on the medium and formality
+${!hasContext ? '* Since no specific context was provided, make intelligent inferences about the situation and create appropriately professional responses' : ''}
+
+Please provide THREE distinct polished versions:
+
+OPTION 1 - PROFESSIONAL & CLEAR:
+Well-balanced, professional tone. Clear and direct while remaining respectful. Good for most business situations.${medium ? ` Formatted appropriately for ${medium}.` : ''}
+
+OPTION 2 - WARM & DIPLOMATIC:
+More empathetic and relationship-focused. Softer language, acknowledges feelings, builds rapport. Best for sensitive situations.${medium ? ` Formatted appropriately for ${medium}.` : ''}
+
+OPTION 3 - CONCISE & DIRECT:
+Short and efficient. Gets to the point quickly while remaining professional. Best for busy recipients or urgent matters.${medium ? ` Formatted appropriately for ${medium}.` : ''}
+
+Format your response EXACTLY like this:
+OPTION 1:
+[your polished response here]
+
+OPTION 2:
+[your polished response here]
+
+OPTION 3:
+[your polished response here]
+
+Do not include any other text, preambles, explanations, or comments about the original message.`;
+
+                // Determine if using Claude or OpenAI
+                const isOpenAI = model.startsWith('gpt-') || model.startsWith('o1');
+                let response;
+
+                response = await fetch('/api/polish', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            { role: 'user', content: prompt }
+                        ],
+                        max_tokens: 3000
+                    })
+                });
+
+                const data = await response.json();
+                let fullText;
+
+                // Parse response based on provider
+                if (isOpenAI) {
+                    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                        fullText = data.choices[0].message.content;
+                    } else {
+                        throw new Error('Invalid response from OpenAI API');
+                    }
+                } else {
+                    if (data.content && data.content[0] && data.content[0].text) {
+                        fullText = data.content[0].text;
+                    } else {
+                        throw new Error('Invalid response from Claude API');
+                    }
+                }
+                
+                // Parse the three options from the response
+                const option1Match = fullText.match(/OPTION 1:?\s*([\s\S]*?)(?=OPTION 2:|$)/i);
+                const option2Match = fullText.match(/OPTION 2:?\s*([\s\S]*?)(?=OPTION 3:|$)/i);
+                const option3Match = fullText.match(/OPTION 3:?\s*([\s\S]*?)$/i);
+                
+                if (option1Match && option2Match && option3Match) {
+                    output1.textContent = option1Match[1].trim();
+                    output2.textContent = option2Match[1].trim();
+                    output3.textContent = option3Match[1].trim();
+                    
+                    output1.classList.remove('empty');
+                    output2.classList.remove('empty');
+                    output3.classList.remove('empty');
+                    
+                    setTimeout(() => {
+                        output1.classList.add('visible');
+                        output2.classList.add('visible');
+                        output3.classList.add('visible');
+                    }, 100);
+                    document.getElementById('errorBanner').classList.remove('visible');
+                } else {
+                    throw new Error('Unable to parse response options');
+                }
+            } catch (error) {
+                document.getElementById('errorBanner').textContent = error.message || 'An error occurred.';
+                document.getElementById('errorBanner').classList.add('visible');
+                document.getElementById('output1').textContent = '';
+                document.getElementById('output2').textContent = '';
+                document.getElementById('output3').textContent = '';
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Polish My Response';
+            }
+        }
+
+        function copyToClipboard(elementId, button) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                button.style.background = 'rgba(16, 185, 129, 0.1)';
+                button.style.borderColor = '#10b981';
+                button.style.color = '#10b981';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                    button.style.borderColor = '';
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+
+        // Allow Ctrl/Cmd + Enter to submit
+        document.getElementById('rawMessage').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                polishResponse();
+            }
+        });
+
+        // Custom Dropdown Implementation
+        function initCustomSelects() {
+            const selects = document.querySelectorAll('select');
+            
+            selects.forEach(select => {
+                // Create wrapper
+                const wrapper = document.createElement('div');
+                wrapper.className = 'custom-select-wrapper';
+                select.parentNode.insertBefore(wrapper, select);
+                wrapper.appendChild(select);
+                
+                // Create trigger
+                const trigger = document.createElement('div');
+                trigger.className = 'custom-select-trigger';
+                
+                const triggerText = document.createElement('span');
+                const selectedOption = select.options[select.selectedIndex];
+                triggerText.textContent = selectedOption.text;
+                
+                const arrow = document.createElement('svg');
+                arrow.className = 'custom-select-arrow';
+                arrow.innerHTML = '<path d="M1 1L6 6L11 1" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+                arrow.setAttribute('width', '12');
+                arrow.setAttribute('height', '8');
+                arrow.setAttribute('viewBox', '0 0 12 8');
+                
+                trigger.appendChild(triggerText);
+                trigger.appendChild(arrow);
+                wrapper.appendChild(trigger);
+                
+                // Create dropdown
+                const dropdown = document.createElement('div');
+                dropdown.className = 'custom-select-dropdown';
+                
+                // Build options
+                Array.from(select.options).forEach(option => {
+                    if (option.parentElement.tagName === 'OPTGROUP') {
+                        // Check if we need to add optgroup label
+                        const optgroup = option.parentElement;
+                        if (!dropdown.querySelector(`[data-optgroup="${optgroup.label}"]`)) {
+                            const optgroupDiv = document.createElement('div');
+                            optgroupDiv.className = 'custom-select-optgroup';
+                            optgroupDiv.textContent = optgroup.label;
+                            optgroupDiv.setAttribute('data-optgroup', optgroup.label);
+                            dropdown.appendChild(optgroupDiv);
+                        }
+                    }
+                    
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'custom-select-option';
+                    optionDiv.textContent = option.text;
+                    optionDiv.setAttribute('data-value', option.value);
+                    
+                    if (option.selected) {
+                        optionDiv.classList.add('selected');
+                    }
+                    
+                    optionDiv.addEventListener('click', () => {
+                        // Update native select
+                        select.value = option.value;
+                        select.dispatchEvent(new Event('change'));
+                        
+                        // Update trigger text
+                        triggerText.textContent = option.text;
+                        
+                        // Update selected class
+                        dropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        optionDiv.classList.add('selected');
+                        
+                        // Close dropdown
+                        dropdown.classList.remove('open');
+                        trigger.classList.remove('open');
+                    });
+                    
+                    dropdown.appendChild(optionDiv);
+                });
+                
+                wrapper.appendChild(dropdown);
+                
+                // Toggle dropdown
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    // Close all other dropdowns
+                    document.querySelectorAll('.custom-select-dropdown.open').forEach(dd => {
+                        if (dd !== dropdown) {
+                            dd.classList.remove('open');
+                            dd.previousElementSibling.classList.remove('open');
+                        }
+                    });
+                    
+                    dropdown.classList.toggle('open');
+                    trigger.classList.toggle('open');
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.custom-select-dropdown.open').forEach(dropdown => {
+                    dropdown.classList.remove('open');
+                    dropdown.previousElementSibling.classList.remove('open');
+                });
+            });
+        }
+
+        // Initialize custom selects when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initCustomSelects();
+            document.getElementById('polishBtn').addEventListener('click', polishResponse);
+        });
+    </script>
+</body>
+</html>
