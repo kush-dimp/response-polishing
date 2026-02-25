@@ -323,16 +323,13 @@
         }
 
         .custom-select-dropdown {
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
-            right: 0;
+            position: fixed;
             background: linear-gradient(135deg, #0f1117 0%, #14161f 100%);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             max-height: 320px;
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 9999;
             box-shadow: var(--shadow-lg), var(--glow);
             display: none;
             animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1305,7 +1302,7 @@ Do not include any other text, preambles, explanations, or comments about the or
                 // Toggle dropdown
                 trigger.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    
+
                     // Close all other dropdowns
                     document.querySelectorAll('.custom-select-dropdown.open').forEach(dd => {
                         if (dd !== dropdown) {
@@ -1313,9 +1310,17 @@ Do not include any other text, preambles, explanations, or comments about the or
                             dd.previousElementSibling.classList.remove('open');
                         }
                     });
-                    
+
+                    const isOpening = !dropdown.classList.contains('open');
                     dropdown.classList.toggle('open');
                     trigger.classList.toggle('open');
+
+                    if (isOpening) {
+                        const rect = trigger.getBoundingClientRect();
+                        dropdown.style.top = (rect.bottom + 8) + 'px';
+                        dropdown.style.left = rect.left + 'px';
+                        dropdown.style.width = rect.width + 'px';
+                    }
                 });
             });
             
